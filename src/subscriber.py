@@ -123,7 +123,7 @@ def main():
                 data_str = json.dumps(data_block)
                 
                 # Giả lập cuộc tấn công sửa đổi gói tin nếu cờ --simulate-attack được bật
-                if args.simulate-attack:
+                if args.simulate_attack:
                     print("[!] Tấn công giả lập: Đang sửa đổi giá trị nhiệt độ trong gói tin...")
                     data_block["temperature"] = 99.9  # Sửa đổi giá trị
                     data_str = json.dumps(data_block)
@@ -145,7 +145,7 @@ def main():
                 payload_json = json.loads(raw_payload)
                 
                 # Giả lập cuộc tấn công sửa đổi gói tin mã hóa
-                if args.simulate-attack:
+                if args.simulate_attack:
                     print("[!] Tấn công giả lập: Đang phá hoại chuỗi ciphertext mã hóa...")
                     payload_json["ciphertext"] = payload_json["ciphertext"][:-5] + "AAAAA"
                 
