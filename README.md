@@ -54,31 +54,44 @@ Khi dữ liệu cảm biến truyền tải thô (Cleartext) qua MQTT, kẻ tấ
 Sơ đồ dưới đây minh họa sự khác biệt giữa 3 chế độ truyền dữ liệu: `cleartext` (không bảo vệ), `hmac` (chống sửa đổi) và `encrypted` (chống nghe lén + chống sửa đổi).
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    rect rgb(240, 240, 240)
-        note right of Publisher: Chế độ 1: Cleartext (Mặc định - Nguy hiểm)
-        Publisher->>MQTT Broker: Gửi dữ liệu thô {"temperature": 24.5}
-        note over MQTT Broker: Kẻ tấn công có thể nghe lén trực tiếp!
-        MQTT Broker->>Subscriber: Nhận dữ liệu rõ trực tiếp
-    end
-    
-    rect rgb(230, 245, 230)
-        note right of Publisher: Chế độ 2: HMAC (Xác thực toàn vẹn)
-        Publisher->>Publisher: Ký HMAC: hash(Data + Secret Key)
-        Publisher->>MQTT Broker: Gửi {"data": Data, "hmac": Hash}
-        note over MQTT Broker: Dữ liệu vẫn bị lộ nhưng không thể sửa đổi
-        MQTT Broker->>Subscriber: Xác thực HMAC(Data) == Hash nhận được
-    end
-    
-    rect rgb(220, 230, 255)
-        note right of Publisher: Chế độ 3: Mã hóa AES-GCM (Bảo mật tuyệt đối)
-        Publisher->>Publisher: Mã hóa AES-GCM-256(Data, Key)
-        Publisher->>MQTT Broker: Gửi {"iv": IV, "ciphertext": Cipher, "tag": Tag}
-        note over MQTT Broker: Kẻ nghe lén chỉ thấy chuỗi vô nghĩa!
-        MQTT Broker->>Subscriber: Giải mã và xác thực tính toàn vẹn bằng tag
-    end
+flowchart LR
+    %% Sơ đồ trực quan 3 mức bảo vệ dữ liệu cảm biến MQTT
+    Sensor["Thiết bị cảm biến<br/>DHT22-SENSOR-001"] --> Raw["Payload JSON<br/>{temperature, humidity}"]
+
+    Raw --> Clear["1. Cleartext<br/>Không bảo vệ"]
+    Clear --> Broker1["MQTT Broker<br/>Topic: iot/sensor/data"]
+    Broker1 --> Sub1["Subscriber nhận JSON rõ"]
+    Broker1 -.-> Attacker1["Kẻ nghe lén<br/>đọc được toàn bộ dữ liệu"]
+
+    Raw --> Hmac["2. HMAC-SHA256<br/>Ký dữ liệu"]
+    Hmac --> Broker2["MQTT Broker<br/>{data, hmac}"]
+    Broker2 --> Sub2["Subscriber kiểm tra HMAC"]
+    Broker2 -.-> Attacker2["Kẻ nghe lén<br/>vẫn thấy dữ liệu<br/>nhưng sửa là bị phát hiện"]
+
+    Raw --> Encrypt["3. AES-256-GCM<br/>Mã hóa + xác thực"]
+    Encrypt --> Broker3["MQTT Broker<br/>{iv, ciphertext, tag}"]
+    Broker3 --> Sub3["Subscriber giải mã<br/>và kiểm tra tag"]
+    Broker3 -.-> Attacker3["Kẻ nghe lén<br/>chỉ thấy ciphertext"]
+
+    Sub1 --> Risk["Rủi ro cao<br/>Mất bí mật + dễ bị sửa"]
+    Sub2 --> Integrity["Bảo vệ toàn vẹn<br/>Phát hiện sửa đổi"]
+    Sub3 --> Secure["Bảo vệ tốt nhất<br/>Bí mật + toàn vẹn"]
+
+    classDef device fill:#E0F2FE,stroke:#0369A1,color:#0C4A6E,stroke-width:2px
+    classDef danger fill:#FEE2E2,stroke:#B91C1C,color:#7F1D1D,stroke-width:2px
+    classDef warn fill:#FEF3C7,stroke:#B45309,color:#78350F,stroke-width:2px
+    classDef safe fill:#DCFCE7,stroke:#15803D,color:#14532D,stroke-width:2px
+    classDef broker fill:#F3F4F6,stroke:#374151,color:#111827,stroke-width:2px
+    classDef attacker fill:#FFE4E6,stroke:#BE123C,color:#881337,stroke-width:2px,stroke-dasharray: 5 5
+
+    class Sensor,Raw device
+    class Clear,Sub1,Risk danger
+    class Hmac,Sub2,Integrity warn
+    class Encrypt,Sub3,Secure safe
+    class Broker1,Broker2,Broker3 broker
+    class Attacker1,Attacker2,Attacker3 attacker
 ```
+
 
 ---
 
