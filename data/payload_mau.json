@@ -1,0 +1,33 @@
+{
+  "cleartext_payload": {
+    "description": "Dữ liệu được gửi dưới dạng rõ (không mã hóa, không ký). Bất kỳ ai nghe lén trên đường truyền đều có thể đọc và sửa đổi trái phép.",
+    "payload": {
+      "timestamp": "2026-07-09T15:40:00Z",
+      "device_id": "DHT22-SENSOR-001",
+      "temperature": 24.5,
+      "humidity": 60.2,
+      "status": "OK"
+    }
+  },
+  "hmac_payload": {
+    "description": "Dữ liệu gửi kèm mã băm HMAC-SHA256 để đảm bảo tính toàn vẹn (Integrity) và xác thực nguồn gốc (Authentication). Dữ liệu vẫn có thể bị đọc trộm, nhưng nếu bị sửa đổi sẽ bị phát hiện.",
+    "payload": {
+      "data": {
+        "timestamp": "2026-07-09T15:40:00Z",
+        "device_id": "DHT22-SENSOR-001",
+        "temperature": 24.5,
+        "humidity": 60.2,
+        "status": "OK"
+      },
+      "hmac": "9b1deb4d83014e30026f8d3d92fb9f6cf3d1f11e9b25a3a2d21a221f7e5db4d1"
+    }
+  },
+  "encrypted_payload": {
+    "description": "Dữ liệu được mã hóa bằng thuật toán AES-GCM-256 trước khi gửi. Đảm bảo tính bí mật (Confidentiality), toàn vẹn (Integrity) và xác thực (Authenticity). Kẻ nghe lén chỉ thấy chuỗi vô nghĩa.",
+    "payload": {
+      "iv": "3d9f82b7c6204d1ba8e3427f",
+      "ciphertext": "z8K/jH5OqPmx8bJqVq8tK7Z...[encrypted_base64_string]...",
+      "tag": "e5f2a1b3c4d5e6f7a8b9c0d1e2f3a4b5"
+    }
+  }
+}

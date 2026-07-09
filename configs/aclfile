@@ -1,0 +1,13 @@
+# Tệp ACL (Access Control List) cho Đề tài 27
+
+# Tài khoản Publisher chỉ được phép ghi (write) dữ liệu vào topic iot/sensor/data
+user publisher_user
+topic write iot/sensor/data
+
+# Tài khoản Subscriber chỉ được phép đọc (read) dữ liệu từ topic iot/sensor/data
+user subscriber_user
+topic read iot/sensor/data
+
+# Kẻ tấn công cố tình giả mạo hoặc truy cập bất hợp pháp vào các topic khác sẽ bị chặn
+user admin_user
+topic readwrite #
