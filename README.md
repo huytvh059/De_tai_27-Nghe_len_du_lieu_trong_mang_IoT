@@ -168,14 +168,3 @@ Chúng ta sử dụng Broker công cộng miễn phí `test.mosquitto.org` (mặ
 
 ---
 
-## 6. Tiến độ Tuần 02
-
-| Yêu cầu trong phiếu cập nhật | Trạng thái | Minh chứng |
-|---|---|---|
-| Tạo repo GitHub/thư mục làm việc đúng đề tài | Xong | Repo này |
-| Viết đề cương 1-2 trang | Xong | [report/de_cuong_tuan02.md](report/de_cuong_tuan02.md) |
-| Thu thập tối thiểu 5 tài liệu tham khảo, có GitHub/tool | Xong | [references/link_nguon.md](references/link_nguon.md) |
-| Xác định công cụ/phương pháp chính | Xong | [report/phuong_phap_thuc_hien.md](report/phuong_phap_thuc_hien.md) |
-| Có kế hoạch Tuần 03 rõ ràng | Xong | [report/ke_hoach_tuan03.md](report/ke_hoach_tuan03.md) |
-
-Phiếu tổng hợp tiến độ: [report/phieu_cap_nhat_tien_do_tuan02.md](report/phieu_cap_nhat_tien_do_tuan02.md)
