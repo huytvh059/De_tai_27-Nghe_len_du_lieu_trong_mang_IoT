@@ -1,17 +1,6 @@
-# Đề tài 27: Nghe lén dữ liệu cảm biến trong mạng IoT
-
-Repository chính thức cho tiểu luận môn **Bảo mật IoT** - Trường Đại học Văn Hiến (VHU).
-
-* **Sinh viên thực hiện:** Thi Võ Hoàng Huy
-* **Mã số sinh viên:** 231A010454
-* **Đề tài số:** 27
-* **Tên đề tài:** Nghe lén dữ liệu cảm biến trong mạng IoT
-
----
-
+Nghe lén dữ liệu cảm biến trong mạng IoT
 ## 1. Cấu trúc Repository
 Repository được tổ chức theo cấu trúc bắt buộc như sau:
-
 ```text
 De_tai_27-Nghe_len_du_lieu_trong_mang_IoT/
 ├── README.md                 # Hướng dẫn chi tiết dự án (Tệp tin này)
