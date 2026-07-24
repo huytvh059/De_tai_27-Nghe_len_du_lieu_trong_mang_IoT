@@ -1,75 +1,134 @@
-# Nghe lén dữ liệu cảm biến trong mạng IoT
+# Nghe lén dữ liệu cảm biến trong mạng IoT (Đề tài 27)
 
-Đề tài 27 - Bảo mật IoT (INT4410). Demo cho thấy dữ liệu cảm biến gửi qua MQTT
-dạng thô thì ai bắt gói cũng đọc được, và ba cách xử lý: gửi thô, ký HMAC, và
-mã hóa AES-256-GCM.
+Bài tiểu luận cuối kỳ môn **Bảo mật IoT (INT4410)**. Dự án là một demo MQTT thu nhỏ
+minh họa: dữ liệu cảm biến gửi dạng **thô (cleartext)** thì ai bắt gói cũng đọc được,
+và ba cách bảo vệ dữ liệu — gửi thô, ký **HMAC-SHA256**, mã hóa **AES-256-GCM** — cùng
+cơ chế **xác thực + phân quyền (ACL)** ở tầng broker.
 
-Publisher đóng vai cảm biến (đọc số liệu giả lập từ `data/dataset_gia_lap.csv`),
-Subscriber đóng vai server nhận và kiểm tra dữ liệu. Cả hai nói chuyện qua một
-MQTT broker.
+- **Publisher** đóng vai cảm biến, đọc số liệu giả lập từ `data/dataset_gia_lap.csv` và gửi payload JSON.
+- **Subscriber** đóng vai server giám sát, nhận payload, kiểm tra toàn vẹn/giải mã và ghi log.
+- Hai bên nói chuyện qua một **MQTT broker** (broker công khai để thử nhanh, hoặc Mosquitto cục bộ có xác thực/ACL).
 
-## Cài đặt
+## Cấu trúc thư mục
 
-Cần Python 3 và hai thư viện:
-
-```bash
-pip install paho-mqtt cryptography
+```
+.
+├── README.md              # Tài liệu này
+├── requirements.txt       # Thư viện Python cần cài
+├── src/                   # Mã nguồn
+│   ├── publisher.py       # Cảm biến giả lập: đọc CSV, gửi payload theo 3 chế độ
+│   ├── subscriber.py      # Server nhận: kiểm tra HMAC / giải mã AES, ghi log + output.csv
+│   └── utils.py           # Hàm HMAC-SHA256, AES-256-GCM và canonical_json (chuẩn hóa JSON để ký)
+├── configs/               # Cấu hình broker Mosquitto cục bộ
+│   ├── mosquitto.conf     # Bật xác thực + ACL, log
+│   ├── aclfile            # Phân quyền topic (publisher_user: ghi, subscriber_user: đọc)
+│   └── passwd             # Mẫu file mật khẩu (tạo bằng mosquitto_passwd)
+├── data/                  # Dữ liệu đầu vào
+│   ├── dataset_gia_lap.csv# Dữ liệu cảm biến DHT22 giả lập (nhiệt độ, độ ẩm)
+│   └── payload_mau.json   # Bản tin mẫu trước/sau khi bảo vệ
+├── results/               # Kết quả thực nghiệm (minh chứng)
+│   ├── logs/              # Log lưu lượng (cleartext_traffic.log, secure_traffic.log)
+│   ├── output.csv         # Dữ liệu subscriber nhận được + trạng thái toàn vẹn
+│   └── screenshots/       # Ảnh chụp màn hình các kịch bản
+├── report/                # Báo cáo, đề cương, kế hoạch
+├── slides/                # Slide trình bày
+└── references/            # Nguồn tham khảo (link_nguon.md)
 ```
 
-## Chạy thử
+## Yêu cầu & cài đặt
 
-Mở hai cửa sổ terminal. Mặc định dùng broker công khai `test.mosquitto.org`
-nên không phải cài broker riêng.
+Cần **Python 3** và hai thư viện:
 
-Cửa sổ 1 - subscriber (chọn `cleartext`, `hmac` hoặc `encrypted`):
+```bash
+pip install -r requirements.txt
+```
+
+(hoặc cài trực tiếp: `pip install paho-mqtt cryptography`)
+
+## Cách chạy / sử dụng
+
+Mở **hai cửa sổ terminal**: một chạy subscriber (bên nhận), một chạy publisher (bên gửi).
+`--mode` ở hai bên **phải giống nhau**. Nên chạy **subscriber trước**, rồi mới chạy publisher.
+
+### A. Chạy nhanh trên broker công khai (không cần cài broker)
+
+Mặc định dùng `test.mosquitto.org` nên không cần dựng broker riêng.
+
+Cửa sổ 1 — subscriber (chọn `cleartext`, `hmac` hoặc `encrypted`):
 
 ```bash
 python src/subscriber.py --mode cleartext
 ```
 
-Cửa sổ 2 - publisher (mode phải trùng với subscriber):
+Cửa sổ 2 — publisher (mode phải trùng subscriber):
 
 ```bash
 python src/publisher.py --mode cleartext --interval 1.5
 ```
 
-Muốn xem cơ chế toàn vẹn hoạt động thế nào, chạy subscriber với `--simulate-attack`:
-nó sẽ sửa gói tin sau khi nhận, HMAC/AES sẽ báo dữ liệu đã bị đổi.
+Ba chế độ khác nhau ở chỗ:
+
+| Mode | Ý nghĩa |
+|------|---------|
+| `cleartext` | Gửi JSON thô — kẻ nghe lén đọc được toàn bộ. |
+| `hmac` | Đính kèm HMAC-SHA256 — vẫn đọc được nhưng sửa là bị phát hiện. |
+| `encrypted` | Mã hóa AES-256-GCM — trên đường truyền chỉ còn chuỗi vô nghĩa. |
+
+Muốn kiểm chứng cơ chế phát hiện sửa đổi, chạy subscriber với `--simulate-attack`
+(nó sửa gói tin sau khi nhận; HMAC/AES sẽ báo dữ liệu đã bị đổi):
 
 ```bash
 python src/subscriber.py --mode hmac --simulate-attack
 ```
 
-Ba mode khác nhau ở chỗ:
+### B. Chạy với broker cục bộ có xác thực + phân quyền (ACL)
 
-- `cleartext` - gửi JSON thô, đọc trộm được toàn bộ.
-- `hmac` - đính kèm HMAC-SHA256, vẫn đọc được nhưng sửa là bị phát hiện.
-- `encrypted` - mã hóa AES-256-GCM, trên đường truyền chỉ còn chuỗi vô nghĩa.
+Dùng để minh họa chống **giả mạo danh tính** (sai mật khẩu bị từ chối) và **vượt quyền**
+(tài khoản chỉ có quyền đọc không được ghi). Cần cài **Eclipse Mosquitto**.
 
-Log và dữ liệu subscriber nhận được lưu trong `results/`.
+1. Sinh tài khoản thật (chạy trong thư mục dự án):
 
-## Broker cục bộ (tùy chọn)
+   ```bash
+   mosquitto_passwd -c configs/passwd publisher_user
+   mosquitto_passwd    configs/passwd subscriber_user
+   ```
 
-Thư mục `configs/` có sẵn `mosquitto.conf`, `aclfile` và `passwd` mẫu để chạy
-Mosquitto trên máy, dùng cho phần thử xác thực và phân quyền topic (ACL). Tạo mật
-khẩu rồi trỏ publisher/subscriber về `127.0.0.1`:
+2. Chạy broker cục bộ (xem log trực tiếp):
 
-```bash
-mosquitto_passwd -c configs/passwd publisher_user
-mosquitto -c configs/mosquitto.conf -v
-python src/publisher.py --broker 127.0.0.1 --username publisher_user --password <pass>
-```
+   ```bash
+   mosquitto -c configs/mosquitto.conf -v
+   ```
 
-## Thư mục
+3. Trỏ client về broker cục bộ kèm tài khoản:
 
-- `src/` - publisher, subscriber và các hàm HMAC/AES trong `utils.py`
-- `configs/` - cấu hình Mosquitto
-- `data/` - dữ liệu cảm biến giả lập
-- `results/` - log, screenshot, output
-- `report/`, `slides/` - báo cáo và slide
-- `references/` - nguồn tham khảo
+   ```bash
+   # publisher_user có quyền GHI
+   python src/publisher.py --broker 127.0.0.1 --username publisher_user --password <mat_khau>
+   # subscriber_user có quyền ĐỌC
+   python src/subscriber.py --broker 127.0.0.1 --username subscriber_user --password <mat_khau>
+   ```
 
-## Nguồn
+> **Mô hình 2 máy (tùy chọn):** đặt broker trên một máy/VM riêng — sửa `listener 1883 0.0.0.0`
+> trong `configs/mosquitto.conf`, rồi ở máy client dùng `--broker <IP_broker>`.
+
+### Tham số dòng lệnh
+
+| Tham số | publisher | subscriber | Mặc định | Mô tả |
+|---------|:---:|:---:|----------|-------|
+| `--mode` | ✓ | ✓ | `cleartext` | `cleartext` / `hmac` / `encrypted` |
+| `--broker` | ✓ | ✓ | `test.mosquitto.org` | Địa chỉ broker |
+| `--port` | ✓ | ✓ | `1883` | Cổng broker |
+| `--topic` | ✓ | ✓ | `iot/sensor/data` | Topic MQTT |
+| `--username` / `--password` | ✓ | ✓ | (rỗng) | Đăng nhập broker (nếu có ACL) |
+| `--interval` | ✓ | | `2.0` | Giây giữa các gói (publisher) |
+| `--simulate-attack` | | ✓ | tắt | Giả lập sửa gói để kiểm chứng toàn vẹn |
+
+## Kết quả & minh chứng
+
+Log lưu lượng và dữ liệu subscriber nhận được được lưu trong `results/`
+(`logs/`, `output.csv`), kèm ảnh chụp màn hình các kịch bản trong `results/screenshots/`.
+
+## Nguồn tham khảo
 
 Eclipse Mosquitto, Eclipse Paho MQTT (Python), RFC 2104 (HMAC),
 NIST SP 800-38D (AES-GCM). Chi tiết trong `references/link_nguon.md`.

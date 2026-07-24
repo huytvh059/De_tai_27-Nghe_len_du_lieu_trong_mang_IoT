@@ -17,7 +17,7 @@ import paho.mqtt.client as mqtt
 
 # Import các hàm bảo mật từ thư viện utils cục bộ
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from utils import verify_hmac, decrypt_data
+from utils import verify_hmac, decrypt_data, canonical_json
 
 def get_mqtt_client(username=None, password=None):
     try:
@@ -119,14 +119,14 @@ def main():
                 data_block = payload_json.get("data", {})
                 received_hmac = payload_json.get("hmac", "")
                 
-                # Biến đổi dữ liệu dạng chuỗi để xác thực
-                data_str = json.dumps(data_block)
+                # Chuẩn hóa dữ liệu về JSON canonical để khớp với chuỗi đã ký ở publisher
+                data_str = canonical_json(data_block)
                 
                 # Giả lập cuộc tấn công sửa đổi gói tin nếu cờ --simulate-attack được bật
                 if args.simulate_attack:
                     print("[!] Tấn công giả lập: Đang sửa đổi giá trị nhiệt độ trong gói tin...")
                     data_block["temperature"] = 99.9  # Sửa đổi giá trị
-                    data_str = json.dumps(data_block)
+                    data_str = canonical_json(data_block)
                 
                 # Xác thực tính toàn vẹn
                 if verify_hmac(data_str, received_hmac):
@@ -162,6 +162,8 @@ def main():
             if args.mode == "encrypted":
                 integrity_verified = "FAILED (Không thể giải mã/Bị phá hoại)"
                 print(f"[-] LỖI GIẢI MÃ: Kẻ tấn công đã sửa đổi gói tin hoặc khóa không đúng! Chi tiết: {e}")
+                # Ghi nhận 1 dòng bằng chứng: gói tin mã hóa bị phá hoại, không giải mã được
+                data_to_save = {"device_id": "UNKNOWN (ciphertext bị sửa đổi)"}
             else:
                 print(f"[-] Lỗi phân tích gói tin: {e}")
                 
@@ -175,14 +177,8 @@ def main():
     client = get_mqtt_client(args.username, args.password)
     
     # Đăng ký các hàm callback
-    try:
-        # Hỗ trợ cấu hình Paho MQTT v2 callbacks
-        client.on_connect = on_connect
-        client.on_message = on_message
-    except Exception:
-        # Fallback
-        client.on_connect = on_connect
-        client.on_message = on_message
+    client.on_connect = on_connect
+    client.on_message = on_message
         
     print(f"[*] Đang kết nối tới MQTT Broker {args.broker}:{args.port}...")
     try:

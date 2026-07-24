@@ -16,6 +16,14 @@ except ImportError:
 DEFAULT_HMAC_KEY = b"SuperSecretHMACKeyForIoTTopic27"
 DEFAULT_AES_KEY = b"12345678901234567890123456789012" # 32 bytes = 256 bits
 
+def canonical_json(data) -> str:
+    """
+    Chuẩn hóa dữ liệu thành MỘT chuỗi JSON duy nhất (sort_keys + bỏ khoảng trắng).
+    Nhờ vậy bên gửi và bên nhận luôn tạo ra CÙNG một chuỗi khi ký/kiểm tra HMAC,
+    không phụ thuộc vào thứ tự key hay cách định dạng khoảng trắng.
+    """
+    return json.dumps(data, sort_keys=True, separators=(',', ':'))
+
 def calculate_hmac(message_str: str, key: bytes = DEFAULT_HMAC_KEY) -> str:
     """
     Tính toán mã băm HMAC-SHA256 để đảm bảo tính toàn vẹn.

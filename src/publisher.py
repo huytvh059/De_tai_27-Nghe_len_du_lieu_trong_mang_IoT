@@ -17,7 +17,7 @@ import paho.mqtt.client as mqtt
 
 # Import các hàm mã hóa từ thư viện utils cục bộ
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from utils import calculate_hmac, encrypt_data
+from utils import calculate_hmac, encrypt_data, canonical_json
 
 def get_mqtt_client(username=None, password=None):
     """
@@ -85,8 +85,9 @@ def main():
                     # Gửi trực tiếp dữ liệu dạng rõ
                     payload_to_send = raw_json
                 elif args.mode == "hmac":
-                    # Tính toán mã băm HMAC cho dữ liệu cảm biến và đính kèm vào payload
-                    signature = calculate_hmac(raw_json)
+                    # Ký HMAC trên JSON đã CHUẨN HÓA (sort_keys + bỏ khoảng trắng) để
+                    # bên nhận tái tạo đúng chuỗi đã ký, không phụ thuộc thứ tự key.
+                    signature = calculate_hmac(canonical_json(sensor_data))
                     payload_to_send = json.dumps({
                         "data": sensor_data,
                         "hmac": signature
