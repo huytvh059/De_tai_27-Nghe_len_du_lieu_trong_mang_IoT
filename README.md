@@ -9,31 +9,6 @@ cơ chế **xác thực + phân quyền (ACL)** ở tầng broker.
 - **Subscriber** đóng vai server giám sát, nhận payload, kiểm tra toàn vẹn/giải mã và ghi log.
 - Hai bên nói chuyện qua một **MQTT broker** (broker công khai để thử nhanh, hoặc Mosquitto cục bộ có xác thực/ACL).
 
-## Cấu trúc thư mục
-
-```
-.
-├── README.md              # Tài liệu này
-├── requirements.txt       # Thư viện Python cần cài
-├── src/                   # Mã nguồn
-│   ├── publisher.py       # Cảm biến giả lập: đọc CSV, gửi payload theo 3 chế độ
-│   ├── subscriber.py      # Server nhận: kiểm tra HMAC / giải mã AES, ghi log + output.csv
-│   └── utils.py           # Hàm HMAC-SHA256, AES-256-GCM và canonical_json (chuẩn hóa JSON để ký)
-├── configs/               # Cấu hình broker Mosquitto cục bộ
-│   ├── mosquitto.conf     # Bật xác thực + ACL, log
-│   ├── aclfile            # Phân quyền topic (publisher_user: ghi, subscriber_user: đọc)
-│   └── passwd             # Mẫu file mật khẩu (tạo bằng mosquitto_passwd)
-├── data/                  # Dữ liệu đầu vào
-│   ├── dataset_gia_lap.csv# Dữ liệu cảm biến DHT22 giả lập (nhiệt độ, độ ẩm)
-│   └── payload_mau.json   # Bản tin mẫu trước/sau khi bảo vệ
-├── results/               # Kết quả thực nghiệm (minh chứng)
-│   ├── logs/              # Log lưu lượng (cleartext_traffic.log, secure_traffic.log)
-│   ├── output.csv         # Dữ liệu subscriber nhận được + trạng thái toàn vẹn
-│   └── screenshots/       # Ảnh chụp màn hình các kịch bản
-├── report/                # Báo cáo, đề cương, kế hoạch
-├── slides/                # Slide trình bày
-└── references/            # Nguồn tham khảo (link_nguon.md)
-```
 
 ## Yêu cầu & cài đặt
 
